@@ -259,8 +259,30 @@ if 'wellness_plan' in st.session_state:
         col1, col2 = st.columns(2)
         with col1:
             if st.button("✅ Accept Plan", type="primary", use_container_width=True):
-                st.session_state['plan_accepted'] = True
-                st.rerun()
+                # Log feedback to database for Learning Manager
+                try:
+                    from wellsync_ai.data.database import get_database_manager
+                    from datetime import datetime
+                    import json
+                    
+                    db = get_database_manager()
+                    feedback_data = {
+                        "action": "accepted",
+                        "user_id": user.get("user_id"), 
+                        "plan_summary": plan.get("reasoning", "")[:100],
+                        "timestamp": datetime.now().isoformat()
+                    }
+                    
+                    # Store as feedback linked to this session
+                    db.store_user_feedback(
+                        state_id=f"session_{user.get('user_id')}_{int(time.time())}", 
+                        feedback=feedback_data
+                    )
+                    
+                    st.session_state['plan_accepted'] = True
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to save progress: {e}")
         with col2:
             if st.button("🔄 Adjust Plan", use_container_width=True):
                  st.info("Re-generation feature coming in v2.0 (Hackathon Limit)")

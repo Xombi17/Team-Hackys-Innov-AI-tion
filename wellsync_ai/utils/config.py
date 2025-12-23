@@ -26,7 +26,7 @@ class WellSyncConfig(BaseSettings):
     
     # LLM Configuration
     llm_provider: str = Field("gemini", env="LLM_PROVIDER")
-    llm_model: str = Field("gemini/gemini-3.0-flash", env="LLM_MODEL") 
+    llm_model: str = Field("gemini/gemini-3-flash-preview", env="LLM_MODEL") 
     
     # Recommended Model Options (2025):
     # - Gemini: gemini/gemini-3.0-flash (Fastest), gemini/gemini-3.0-pro (Reasoning)

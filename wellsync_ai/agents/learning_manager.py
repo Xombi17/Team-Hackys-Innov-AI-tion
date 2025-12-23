@@ -78,16 +78,47 @@ class LearningManager:
     def _analyze_compliance(self, history: List[Dict[str, Any]]) -> Dict[str, float]:
         """
         Estimate user compliance based on explicit feedback or subsequent state.
-        For MVP, we check if users accepted the plan (if that data exists).
+        Reads 'user_feedback' table for 'accepted' actions.
         """
-        # Placeholder for MVP - assumes 100% compliance until we have explicit feedback loop
-        return {"general_compliance": 0.8}
+        # Get last 20 feedback items
+        # In a real app we'd filter by user_id, but here we scan recent logs
+        # Since get_user_feedback filters by state_id (session), we might need a broader query
+        # For this MVP, we will rely on the history passed in or assume high trust if feedback exists
+        
+        # fallback
+        compliance_score = 0.8
+        
+        try:
+             # Heuristic: If we have ANY positive feedback in the DB, boost confidence
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT count(*) FROM user_feedback WHERE feedback_data LIKE '%accepted%'")
+                count = cursor.fetchone()[0]
+                
+                if count > 0:
+                    compliance_score = min(0.95, 0.8 + (count * 0.02))
+                    
+        except Exception:
+            pass
+            
+        return {"general_compliance": compliance_score}
 
     def _calculate_adapted_baselines(self, history: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Adjust baselines if user consistently fails to meet constraints.
-        E.g. If user never hits 8h sleep, lower baseline to 7h to be realistic.
+        E.g. If compliance is low, lower step targets or workout duration.
         """
-        # This would analyze recorded constraint violations
-        # For phase 1 MVP, we return empty adjustments
-        return {}
+        adjustments = {}
+        
+        # Check compliance trend
+        compliance = self._analyze_compliance(history).get("general_compliance", 0.8)
+        
+        if compliance < 0.6:
+            # Low compliance -> Simplify everything
+            adjustments["workout_intensity_cap"] = "Low"
+            adjustments["meal_prep_complexity"] = "Simple"
+        elif compliance > 0.9:
+            # High compliance -> Allow advanced plans
+            adjustments["allow_advanced_techniques"] = True
+            
+        return adjustments
