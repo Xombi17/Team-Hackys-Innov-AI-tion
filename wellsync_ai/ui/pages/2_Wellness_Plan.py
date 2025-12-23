@@ -337,32 +337,42 @@ st.markdown("### 🎬 Demo Scenarios")
 
 DEMO_SCENARIOS = {
     "Custom (Use My Profile)": None,
-    "😴 Sleep Debt + HIIT Conflict": {
-        "description": "4.5 hours sleep + HIIT request → Watch Sleep Agent veto intensity",
+    "😴 Sleep Debt + Intense Workout": {
+        "description": "4.5 hours sleep + gym request → Watch Sleep Agent veto intensity",
         "user_profile": {
-            "user_id": "demo_sleep", "name": "Alex", "age": 28,
+            "user_id": "demo_sleep", "name": "Arjun", "age": 24,
             "goals": ["weight_loss", "energy"],
-            "constraints": {"workout_minutes": 45, "daily_budget": 20}
+            "constraints": {"workout_minutes": 45, "daily_budget": 150}
         },
         "recent_data": {"sleep": {"hours": 4.5, "quality": "poor"}, "stress": "high"}
     },
-    "💸 Budget Crunch ($8/day)": {
-        "description": "$8 daily budget → Watch Nutrition Agent optimize meals",
+    "💸 Hostel Mess Budget (₹80/day)": {
+        "description": "Limited hostel budget + Monday veg day → Watch Nutrition Agent optimize",
         "user_profile": {
-            "user_id": "demo_budget", "name": "Sam", "age": 22,
-            "goals": ["muscle_gain"],
-            "constraints": {"workout_minutes": 60, "daily_budget": 8}
+            "user_id": "demo_hostel", "name": "Priya", "age": 21,
+            "goals": ["energy", "focus"],
+            "constraints": {"workout_minutes": 30, "daily_budget": 80, "food_source": "hostel_mess"},
+            "dietary": {"veg_days": ["Monday", "Thursday"], "avoid": ["beef", "pork"]}
         },
-        "recent_data": {"nutrition": {"missed_meals": 1}, "energy_demand": "high"}
+        "recent_data": {"nutrition": {"missed_meals": 1, "day_of_week": "Monday"}}
     },
-    "🧠 Stress Overload": {
-        "description": "High stress + low adherence → Watch Mental Agent simplify plan",
+    "🧠 Exam Stress + Low Adherence": {
+        "description": "High stress during exams → Watch Mental Agent simplify plan",
         "user_profile": {
-            "user_id": "demo_stress", "name": "Jordan", "age": 35,
-            "goals": ["stress_relief"],
-            "constraints": {"workout_minutes": 30, "daily_budget": 15}
+            "user_id": "demo_exam", "name": "Rahul", "age": 22,
+            "goals": ["stress_relief", "focus"],
+            "constraints": {"workout_minutes": 20, "daily_budget": 100}
         },
-        "recent_data": {"mental": {"stress_level": 9, "adherence_rate": 0.3}}
+        "recent_data": {"mental": {"stress_level": 9, "adherence_rate": 0.25, "reason": "exams"}}
+    },
+    "🚇 Long Commute + Irregular Schedule": {
+        "description": "2hr daily commute → Watch agents adapt to time constraints",
+        "user_profile": {
+            "user_id": "demo_commute", "name": "Sneha", "age": 28,
+            "goals": ["maintain_weight", "energy"],
+            "constraints": {"workout_minutes": 20, "daily_budget": 120, "commute_hours": 2}
+        },
+        "recent_data": {"schedule": {"dinner_time": "9:30 PM", "wake_time": "5:30 AM"}}
     }
 }
 
@@ -572,9 +582,13 @@ if 'wellness_plan' in st.session_state:
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Daily Calories", f"{nutrition.get('daily_calories', 2200)} kcal")
+            st.metric("Daily Calories", f"{nutrition.get('daily_calories', 1800)} kcal")
         with col2:
-            st.metric("Budget", nutrition.get('budget_estimate', '$12-15/day'))
+            budget = nutrition.get('budget_estimate', '₹120-150/day')
+            # Convert if it's in dollars
+            if '$' in str(budget):
+                budget = '₹120-150/day'
+            st.metric("Budget", budget)
         with col3:
             st.metric("Hydration", nutrition.get('hydration', '8+ glasses'))
         
@@ -592,11 +606,12 @@ if 'wellness_plan' in st.session_state:
         
         meals = nutrition.get('meals', [])
         if not meals:
+            # Indian meal defaults
             meals = [
-                {"meal": "Breakfast", "time": "7:30 AM", "items": ["Oatmeal with berries", "Greek yogurt"], "calories": 450},
-                {"meal": "Lunch", "time": "12:30 PM", "items": ["Grilled chicken salad", "Whole grain bread"], "calories": 650},
-                {"meal": "Snack", "time": "4:00 PM", "items": ["Apple", "Almond butter"], "calories": 250},
-                {"meal": "Dinner", "time": "7:00 PM", "items": ["Baked salmon", "Quinoa", "Vegetables"], "calories": 700}
+                {"meal": "Breakfast", "time": "8:00 AM", "items": ["Idli (3 pcs) + Sambar", "Filter coffee", "Banana"], "calories": 420},
+                {"meal": "Lunch", "time": "1:00 PM", "items": ["Rice (1 cup)", "Dal tadka", "Sabzi", "Curd", "Salad"], "calories": 650},
+                {"meal": "Snack", "time": "5:00 PM", "items": ["Sprouts chaat", "Chai", "Marie biscuits (2)"], "calories": 200},
+                {"meal": "Dinner", "time": "8:00 PM", "items": ["Roti (2)", "Paneer bhurji", "Green vegetables"], "calories": 550}
             ]
         
         for meal in meals:
@@ -757,6 +772,144 @@ if 'wellness_plan' in st.session_state:
         # Raw JSON
         with st.expander("📦 View Raw JSON"):
             st.json(data)
+    
+    # ==============================
+    # FEEDBACK SECTION
+    # ==============================
+    st.markdown("---")
+    st.markdown("### 🎯 Plan Feedback")
+    st.caption("Help our agents learn and adapt to your preferences")
+    
+    # Check if already accepted
+    if st.session_state.get('plan_accepted'):
+        st.markdown("""
+        <div class="resolution-box">
+            <strong>✅ Plan Accepted!</strong><br>
+            Your wellness journey begins. Track your progress and come back tomorrow for updates.
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("✅ Accept Plan", type="primary", use_container_width=True):
+                st.session_state['plan_accepted'] = True
+                st.success("🎉 Great! Your plan has been saved. Agents will track your progress!")
+                st.rerun()
+        
+        with col2:
+            reject_clicked = st.button("🔄 Adjust Plan", use_container_width=True)
+        
+        if reject_clicked or st.session_state.get('show_rejection_form'):
+            st.session_state['show_rejection_form'] = True
+            
+            st.markdown("#### What would you like to change?")
+            
+            rejection_reasons = st.multiselect(
+                "Select reasons:",
+                [
+                    "🏋️ Workouts too intense",
+                    "🏋️ Workouts too easy",
+                    "🥗 Meals don't match my taste",
+                    "🥗 Budget too high",
+                    "🥗 Non-veg on wrong day (I eat non-veg only on specific days)",
+                    "💤 Sleep schedule doesn't work",
+                    "🧠 Too many activities",
+                    "⏰ Not enough time"
+                ]
+            )
+            
+            # Indian dietary preferences
+            st.markdown("**🍽️ Dietary Preferences (Indian)**")
+            col_d1, col_d2 = st.columns(2)
+            with col_d1:
+                nonveg_days = st.multiselect(
+                    "Non-veg days:",
+                    ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+                    default=["Sunday", "Saturday"]
+                )
+            with col_d2:
+                avoid_foods = st.multiselect(
+                    "Foods to avoid:",
+                    ["Beef", "Pork", "Almond milk", "Cheese", "Eggs", "Onion", "Garlic"],
+                    default=["Beef", "Pork", "Almond milk"]
+                )
+            
+            additional_notes = st.text_area("Additional feedback:", placeholder="e.g., I prefer South Indian breakfast, budget is ₹200/day...")
+            
+            if st.button("🔄 Regenerate with Preferences", type="primary"):
+                # Store feedback
+                st.session_state['user_feedback'] = {
+                    'rejection_reasons': rejection_reasons,
+                    'nonveg_days': nonveg_days,
+                    'avoid_foods': avoid_foods,
+                    'notes': additional_notes,
+                    'timestamp': time.time()
+                }
+                st.session_state['show_rejection_form'] = False
+                st.session_state['regenerate_requested'] = True
+                st.rerun()
+    
+    # Handle regeneration
+    if st.session_state.get('regenerate_requested'):
+        st.session_state['regenerate_requested'] = False
+        feedback = st.session_state.get('user_feedback', {})
+        
+        st.info("🔄 **Re-planning with your preferences...**")
+        
+        # Build constraints from feedback
+        adapted_constraints = user.get("constraints", {}).copy()
+        
+        # Add dietary preferences
+        adapted_constraints['nonveg_days'] = feedback.get('nonveg_days', [])
+        adapted_constraints['avoid_foods'] = feedback.get('avoid_foods', [])
+        adapted_constraints['rejection_feedback'] = feedback.get('rejection_reasons', [])
+        
+        progress = st.progress(0)
+        status = st.empty()
+        
+        for msg, prog in [
+            ("🧠 Reflection Agent analyzing feedback...", 0.2),
+            ("🔄 Adjusting constraints...", 0.4),
+            ("💪 Re-running Fitness Agent...", 0.6),
+            ("🥗 Re-running Nutrition Agent with Indian preferences...", 0.8),
+        ]:
+            status.info(msg)
+            progress.progress(prog)
+            time.sleep(0.3)
+        
+        try:
+            payload = {
+                "user_id": user["user_id"],
+                "user_profile": user,
+                "goals": {"primary": user["goals"][0] if user.get("goals") else "wellness"},
+                "constraints": adapted_constraints,
+                "recent_data": {"feedback": feedback}
+            }
+            
+            response = requests.post("http://localhost:5000/wellness-plan", json=payload, timeout=120)
+            progress.progress(1.0)
+            status.empty()
+            
+            if response.status_code == 200:
+                data = response.json()
+                st.session_state['wellness_plan'] = data
+                st.session_state['plan_adapted'] = True
+                st.success("✨ **Adapted Plan Generated!** Scroll up to view your updated plan.")
+                st.rerun()
+            else:
+                st.error("Re-planning failed. Please try again.")
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
+    
+    # Show adapted badge
+    if st.session_state.get('plan_adapted'):
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1)); 
+                    border: 1px solid rgba(34, 197, 94, 0.5); border-radius: 12px; padding: 1rem; margin-top: 1rem;">
+            <strong>🔄 Adapted Plan</strong> — This plan was adjusted based on your feedback!
+        </div>
+        """, unsafe_allow_html=True)
 
 else:
     # No plan yet - show placeholder
@@ -767,3 +920,4 @@ else:
         <p style="color: #94a3b8;">Select a demo scenario or use your profile, then click Generate</p>
     </div>
     """, unsafe_allow_html=True)
+
