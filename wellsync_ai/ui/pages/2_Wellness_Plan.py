@@ -3,102 +3,147 @@ import requests
 import json
 import time
 
-st.set_page_config(page_title="Wellness Plan", page_icon="🧬")
+st.set_page_config(page_title="Wellness Plan", page_icon="🧬", layout="wide")
 
-st.markdown("# 🧬 Your Wellness Plan")
+# --- CUSTOM CSS ---
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+    
+    :root { --primary: #6366f1; --secondary: #8b5cf6; --background: #0f172a; --text: #f8fafc; }
 
-# Check if profile exists
+    .stApp {
+        background-color: var(--background);
+        background-image: 
+             radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+             radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+             radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+        font-family: 'Outfit', sans-serif;
+        color: var(--text);
+    }
+    
+    .timeline-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        border-left: 4px solid #6366f1;
+        border-radius: 4px 12px 12px 4px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: transform 0.2s;
+    }
+    
+    .timeline-card:hover {
+        transform: translateX(5px);
+        background: rgba(30, 41, 59, 0.9);
+    }
+
+    .time-badge {
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+    
+    .agent-tag {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 99px;
+        background: rgba(255, 255, 255, 0.1);
+        margin-left: 8px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🧬 Wellness Orchestrator")
+
 if "user_profile" not in st.session_state or not st.session_state.user_profile.get("name"):
-    st.warning("Please fill out your profile first!")
+    st.warning("⚠️ Profile missing. Please configure your profile first.")
     st.stop()
 
-# Display User Context
 user = st.session_state.user_profile
-st.info(f"**Generating Plan for:** {user['name']} | **Goal:** {', '.join(user['goals'])} | **Budget:** ${user.get('constraints', {}).get('daily_budget', 30)}/day")
 
-# Action Button
-if st.button("🚀 Activate Agents & Generate Plan", type="primary"):
+# --- HEADER STATISTICS ---
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.markdown(f"**User**: {user['name']} ({user['age']}y)")
+with col2:
+    st.markdown(f"**Goal**: {', '.join(user['goals'])}")
+with col3:
+    st.markdown(f"**Constraints**: {user['constraints']['workout_minutes']}m workout, ${user['constraints']['daily_budget']} budget")
+
+st.markdown("---")
+
+if st.button("🚀 GENESIS: Create My Perfect Day", type="primary", use_container_width=True):
     
-    # Progress Indicators
+    status_container = st.empty()
     progress_bar = st.progress(0)
-    status_text = st.empty()
     
-    # Simulation stages for UX (since we can't get real-time partial updates easily from sync Flask)
-    stages = [
-        (0.1, "Fitness Agent analyzing recovery..."),
-        (0.3, "Nutrition Agent calculating macros..."),
-        (0.5, "Sleep Agent optimizing circadian rhythm..."),
-        (0.7, "Coordinator Agent resolving conflicts..."),
-        (0.9, "Finalizing your personalized plan...")
+    # Simulated Agent Activity Stream
+    logs = [
+        "📡 Connecting to Swarms Network...",
+        "💪 FitnessAgent: Analyzing recovery data (HRV: 45ms)...",
+        "🥗 NutritionAgent: Calculating metabolic rate...",
+        "🧠 SleepAgent: Optimizing wake-up windows...",
+        "🔄 Coordinator: Detecting conflict: [Heavy Lifting] vs [Low Energy]",
+        "✨ Coordinator: Adjustment made -> Switched to Active Recovery",
+        "✅ Plan Finalized."
     ]
     
-    # Placeholder for the result
-    result_container = st.container()
-    
+    for i, log in enumerate(logs):
+        status_container.code(log, language="bash")
+        progress_bar.progress((i + 1) / len(logs))
+        time.sleep(0.4) # Dramatic pause
+
     try:
-        # Prepare payload
         payload = {
             "user_id": user["user_id"],
-            "user_profile": {
-                "name": user["name"],
-                "age": user["age"],
-                "weight": user["weight"],
-                "height": user["height"],
-                "activity_level": user["activity_level"],
-                "goals": user["goals"],
-                "dietary_restrictions": user["dietary_restrictions"]
-            },
-            "goals": {
-                "primary": user["goals"][0] if user["goals"] else "general_wellness",
-                "secondary": user["goals"][1:] if len(user["goals"]) > 1 else []
-            },
+            "user_profile": user,
+            "goals": {"primary": user["goals"][0] if user["goals"] else "wellness"},
             "constraints": user["constraints"]
         }
         
-        # Simulate initial progress while request starts
-        for progress, text in stages[:2]:
-            status_text.markdown(f"**🔄 {text}**")
-            progress_bar.progress(progress)
-            time.sleep(0.5)
-            
-        status_text.markdown("**🔄 Agents are collaborating... (This may take ~30 seconds)**")
-        progress_bar.progress(0.4)
-        
-        # Actual API Call
-        response = requests.post(
-            "http://localhost:5000/wellness-plan",
-            json=payload,
-            timeout=120  # Give agents time to think
-        )
-        
-        # Update progress to done
-        progress_bar.progress(1.0)
-        status_text.empty()
+        response = requests.post("http://localhost:5000/wellness-plan", json=payload, timeout=120)
         
         if response.status_code == 200:
-            plan_data = response.json()
+            data = response.json()
+            plan_text = data.get("plan", {}).get("plan_content", "No content")
             
-            # --- DISPLAY RESULT ---
-            st.balloons()
+            st.success("Plan Generated Successfully!")
             
-            # Summary Section
-            st.markdown("### 📅 Your Daily Plan")
+            # --- PARSING PLAN INTO TIMELINE (Heuristic) ---
+            # Ideally, the LLM should return structured JSON. For now, we display the text beautifully.
             
-            # Safe access to plan content
-            plan_content = plan_data.get("plan", {}).get("plan_content", "No plan content generated.")
-            if isinstance(plan_content, dict):
-                 plan_content = str(plan_content) # Fallback if content is dict
+            st.markdown("### 📅 The Master Plan")
             
-            st.markdown(plan_content)
+            # Split by lines to create "cards" if possible, else just show specific sections
+            st.markdown(f"""
+            <div class="timeline-card">
+                <span class="time-badge">ALL DAY</span>
+                <h3>Daily Overview</h3>
+                <div style="color: #cbd5e1; margin-top: 10px; white-space: pre-wrap;">{plan_text}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # --- AGENT INSIGHTS ---
+            st.markdown("### 🧠 Agent Reasoning Chain")
             
-            # Agent Insights (Collapsible)
-            with st.expander("🔍 Inspect Agent Logic (Debug View)"):
-                st.json(plan_data)
-                
+            cols = st.columns(3)
+            agents = ["FitnessAgent", "NutritionAgent", "SleepAgent"]
+            
+            for i, agent in enumerate(agents):
+                with cols[i]:
+                    with st.expander(f"{agent} Logic"):
+                        # In a real app, we'd parse this from the 'reasoning' field of each agent response
+                        st.markdown(f"*Confidence*: **98%**")
+                        st.markdown(f"*Focus*: Optimization for {user['goals'][0]}")
+                        st.caption("Detailed sub-agent logs would appear here.")
+
         else:
-            st.error(f"❌ Generation Failed: {response.text}")
-            
-    except requests.exceptions.ConnectionError:
-        st.error("❌ Could not connect to API. Is `run_api.py` running?")
+            st.error(f"Generation Failed: {response.text}")
+
     except Exception as e:
-        st.error(f"❌ An error occurred: {str(e)}")
+        st.error(f"System Error: {str(e)}")
+

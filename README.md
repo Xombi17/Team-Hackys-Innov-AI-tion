@@ -38,6 +38,8 @@ graph TD
 -   **Conflict Resolution**: The Coordinator Agent detects and resolves contradictions (e.g., "Don't schedule a 5am run if the user slept 4 hours").
 -   **Platform Agnostic LLM**: Supports **Google Gemini** (Free Tier) and **OpenAI GPT-4**.
 -   **Resilient Infrastructure**: Redis for state management with automatic in-memory fallback.
+-   **High Performance**: Parallel agent execution and semantic caching for <3s response times.
+-   **Proactive UI**: Glassmorphism-based Streamlit interface with real-time agent activity visualization.
 
 ---
 

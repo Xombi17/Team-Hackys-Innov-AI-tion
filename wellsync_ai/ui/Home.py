@@ -3,6 +3,8 @@ import requests
 import json
 import os
 import sys
+import time
+from datetime import datetime
 
 # Add project root to path
 sys.path.append(os.getcwd())
@@ -15,180 +17,226 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Modern UI
+# --- CUSTOM CSS & THEME ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
     
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
-    
-    .main {
-        background-color: #f8fafc;
-        background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-        background-size: 20px 20px;
-    }
-    
-    .stCard {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        padding: 2rem;
-        border-radius: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
-        transition: transform 0.2s ease-in-out;
-    }
-    
-    .stCard:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    :root {
+        --primary: #6366f1;
+        --secondary: #8b5cf6;
+        --accent: #10b981;
+        --background: #0f172a;
+        --surface: #1e293b;
+        --text: #f8fafc;
     }
 
-    .metric-card {
-        background: linear-gradient(145deg, #ffffff, #f1f5f9);
-        padding: 1.5rem;
-        border-radius: 1rem;
-        border: 1px solid #e2e8f0;
-        text-align: center;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
+    /* GLOBAL STYLES */
+    .stApp {
+        background-color: var(--background);
+        background-image: 
+            radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+            radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+            radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+        font-family: 'Outfit', sans-serif;
+        color: var(--text);
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+
+    /* GLASSMORPHISM CARDS */
+    .glass-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 2rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .glass-card:hover {
+        transform: translateY(-5px) scale(1.01);
+        background: rgba(30, 41, 59, 0.85);
+        border-color: rgba(99, 102, 241, 0.5);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
     }
     
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        border-color: #cbd5e1;
+    /* ANIMATIONS */
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
     }
     
-    h1 {
-        background: linear-gradient(to right, #2563eb, #7c3aed);
+    .floating-icon {
+        animation: float 6s ease-in-out infinite;
+    }
+
+    /* METRICS */
+    .metric-value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(to right, #818cf8, #c084fc);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-weight: 800;
-        letter-spacing: -0.025em;
     }
-    
-    h2, h3 {
-        color: #0f172a;
+
+    .metric-label {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
         font-weight: 600;
-        letter-spacing: -0.025em;
     }
     
-    .status-ok {
-        color: #10b981;
-        font-weight: 700;
-        background: #ecfdf5;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
+    /* STATUS INDICATORS */
+    .status-dot {
+        height: 10px;
+        width: 10px;
+        border-radius: 50%;
         display: inline-block;
+        margin-right: 8px;
     }
-    
-    .status-err {
-        color: #ef4444;
-        font-weight: 700;
-        background: #fef2f2;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        display: inline-block;
-    }
-    
-    /* Custom Sidebar Styling */
+    .status-online { background-color: #10b981; box-shadow: 0 0 10px #10b981; }
+    .status-offline { background-color: #ef4444; box-shadow: 0 0 10px #ef4444; }
+
+    /* SIDEBAR */
     section[data-testid="stSidebar"] {
-        background-color: #ffffff;
-        border-right: 1px solid #e2e8f0;
+        background-color: rgba(15, 23, 42, 0.95);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
     }
+    
 </style>
 """, unsafe_allow_html=True)
 
-# Main Title
-col1, col2 = st.columns([1, 4])
+# --- HEADER SECTION ---
+col1, col2 = st.columns([1, 5])
 with col1:
-    st.image("https://img.icons8.com/3d-fluency/94/brain.png", width=80) 
+    st.markdown('<div class="floating-icon"><img src="https://img.icons8.com/3d-fluency/94/brain.png" width="100%"></div>', unsafe_allow_html=True)
 with col2:
-    st.title("WellSync AI Orchestrator")
-    st.markdown("### Autonomous Multi-Agent Wellness System")
+    st.markdown("""
+    <h1 style="font-size: 4rem; margin-bottom: 0;">WellSync AI</h1>
+    <p style="font-size: 1.5rem; color: #cbd5e1; margin-top: -10px;">Autonomous Multi-Agent Wellness Orchestrator</p>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
-# System Status Check
+# --- SYSTEM HEALTH CHECK ---
 API_URL = "http://localhost:5000"
 
 def check_system_status():
     try:
         # Check API Health
-        api_resp = requests.get(f"{API_URL}/health", timeout=2)
+        api_resp = requests.get(f"{API_URL}/health", timeout=1)
         api_status = api_resp.json().get('status') == 'healthy'
         
         # Check Agents (Simulated check via API)
-        agent_resp = requests.get(f"{API_URL}/agents/status", timeout=2)
+        agent_resp = requests.get(f"{API_URL}/agents/status", timeout=1)
         agents_active = len(agent_resp.json().get('agents', []))
         
         return True, agents_active, "System Operational"
     except Exception as e:
         return False, 0, f"Connection Failed: {str(e)}"
 
-status, active_agents, message = check_system_status()
+# Simulating a "Live" check effect
+with st.spinner("Syncing with Swarms Network..."):
+    time.sleep(0.5)
+    status, active_agents, message = check_system_status()
 
-# Dashboard Metrics
+# --- LIVE DASHBOARD ---
+st.markdown("### ⚡ Live System Matrix")
+
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.markdown(f"""
-    <div class="metric-card">
-        <h3 style="margin:0">System Status</h3>
-        <p class="{'status-ok' if status else 'status-err'}" style="font-size: 1.2rem; margin-top: 0.5rem">
-            {'ONLINE' if status else 'OFFLINE'}
-        </p>
+    <div class="glass-card">
+        <div class="metric-label">System Status</div>
+        <div style="margin-top: 10px; font-size: 1.5rem; font-weight: 600; color: {'#10b981' if status else '#ef4444'}">
+            <span class="status-dot {'status-online' if status else 'status-offline'}"></span>
+            {'OPERATIONAL' if status else 'OFFLINE'}
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
     st.markdown(f"""
-    <div class="metric-card">
-        <h3 style="margin:0">Active Agents</h3>
-        <p style="font-size: 1.5rem; font-weight: bold; color: #3b82f6; margin-top: 0.5rem">
-            5
-        </p>
+    <div class="glass-card">
+        <div class="metric-label">Active Agents</div>
+        <div class="metric-value">{active_agents if status else 0}</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
     st.markdown("""
-    <div class="metric-card">
-        <h3 style="margin:0">LLM Provider</h3>
-        <p style="font-size: 1.2rem; font-weight: bold; color: #8b5cf6; margin-top: 0.5rem">
-            Gemini Flash
-        </p>
+    <div class="glass-card">
+        <div class="metric-label">Intelligence</div>
+        <div class="metric-value" style="font-size: 1.8rem;">Groq LLaMA3</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col4:
     st.markdown("""
-    <div class="metric-card">
-        <h3 style="margin:0">Database</h3>
-        <p style="font-size: 1.2rem; font-weight: bold; color: #10b981; margin-top: 0.5rem">
-            SQLite + Redis
+    <div class="glass-card">
+        <div class="metric-label">Architecture</div>
+        <div class="metric-value" style="font-size: 1.8rem;">Swarms + Redis</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# --- HOW IT WORKS (VISUAL) ---
+st.markdown("### 🧬 The Agent Swarm")
+
+c1, c2, c3 = st.columns([1, 1, 1])
+
+with c1:
+    st.markdown("""
+    <div class="glass-card" style="height: 100%">
+        <h4>💪 Fitness Agent</h4>
+        <p style="color: #94a3b8; font-size: 0.9rem;">
+        Analyzes recovery data, fatigue levels, and goals to prescribe the optimal daily workout load.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown("---")
+with c2:
+    st.markdown("""
+    <div class="glass-card" style="height: 100%">
+        <h4>🥗 Nutrition Agent</h4>
+        <p style="color: #94a3b8; font-size: 0.9rem;">
+        Calculates caloric needs based on workout intensity and plans meals that fit your budget.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# Hero Section
-st.markdown("### 🧬 How it Works")
-st.info("""
-**WellSync AI** uses a swarm of autonomous agents to build your perfect day.
-1.  **Fitness Agent**: Analyzes your recovery and goals to design workouts.
-2.  **Nutrition Agent**: Plans meals that fuel your workouts and fit your budget.
-3.  **Sleep Agent**: Optimizes your circadian rhythm and rest.
-4.  **Mental Wellness**: Ensures your plan supports your cognitive health.
-5.  **Coordinator Agent**: Resolves conflicts (e.g., "Too tired for HIIT") to create a unified plan.
-""")
+with c3:
+    st.markdown("""
+    <div class="glass-card" style="height: 100%">
+        <h4>🧠 Coordinator Agent</h4>
+        <p style="color: #94a3b8; font-size: 0.9rem;">
+        Resolves conflicts (e.g., "High Fatigue" vs "Heavy Lift") to ensure plan achievability.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# --- FOOTER / CTA ---
+st.write("")
+st.write("")
 
 if not status:
-    st.error(f"⚠️ **API is unreachable.** Please run `python run_api.py` in your terminal.\n\nError: {message}")
+    st.warning(f"⚠️ **API Disconnected**: Please ensure `python run_api.py` is running in the terminal.")
 else:
-    st.success("✅ **System Connected.** Navigate to **'User Profile'** in the sidebar to start generating your plan!")
+    st.markdown("""
+    <div style="text-align: center; margin-top: 2rem;">
+        <span style="background: rgba(99, 102, 241, 0.1); color: #818cf8; padding: 0.5rem 1rem; border-radius: 99px; border: 1px solid rgba(99, 102, 241, 0.3);">
+            🚀 Ready to start? Open the sidebar and select <b>User Profile</b>
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
 
-st.sidebar.success("Select a page above.")
