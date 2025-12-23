@@ -89,6 +89,8 @@ class WellnessWorkflowOrchestrator:
         shared_state.update_recent_data('unified_plan', unified_plan)
         
         logger.info("Wellness workflow execution completed", state_id=state_id)
+        
+        return final_response
     async def _run_agents(
         self, 
         user_profile: Dict[str, Any], 

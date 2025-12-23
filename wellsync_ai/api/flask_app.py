@@ -386,7 +386,14 @@ def create_flask_app() -> Flask:
                 asyncio.set_event_loop(loop)
             
             result = loop.run_until_complete(orchestrator.execute_workflow(shared_state.state_id))
-            
+
+            if not result:
+                raise WellnessAPIError(
+                    "Workflow execution returned no result",
+                    status_code=500,
+                    error_code="WORKFLOW_EXECUTION_FAILED"
+                )
+
             response_data = {
                 'success': True,
                 'timestamp': datetime.now().isoformat(),
