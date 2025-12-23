@@ -37,4 +37,6 @@ gunicorn>=21.0.0
 
 # Monitoring and Logging
 structlog>=23.0.0
-prometheus-client>=0.17.0
+
+# UI Framework
+streamlit>=1.30.0

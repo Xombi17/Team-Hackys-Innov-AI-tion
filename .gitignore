@@ -144,4 +144,6 @@ dump.rdb
 
 # Temporary files
 *.tmp
-*.temp
+
+# Swarms workspace
+agent_workspace/
