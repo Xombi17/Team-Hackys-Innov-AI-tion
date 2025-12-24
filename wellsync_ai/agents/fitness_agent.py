@@ -140,6 +140,8 @@ CURRENT TRAINING METRICS:
 RECOVERY SIGNALS:
 {self._format_recovery_signals(user_data, shared_state)}
 
+{self._format_historical_context(shared_state.get('historical_context', []) if shared_state else [])}
+
 TASK: Design a sustainable workout plan that:
 1. Respects all time and equipment constraints
 2. Progresses toward fitness goals appropriately

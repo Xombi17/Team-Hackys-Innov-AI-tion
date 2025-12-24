@@ -316,7 +316,7 @@ def create_flask_app() -> Flask:
                         'status': 'healthy' if db_status else 'unhealthy',
                         'type': 'supabase' if db_manager.use_supabase else 'sqlite'
                     },
-                    'redis': 'healthy' if redis_status else 'unhealthy'
+                    'redis': 'healthy' if redis_status else 'fallback'
                 }
             }
             

@@ -25,13 +25,13 @@ class DatabaseManager:
         
         if self.use_supabase:
             self.supabase: Client = create_client(config.supabase_url, config.supabase_key)
-            print("🚀 DatabaseManager initialized with Supabase")
+            print("[DB] DatabaseManager initialized with Supabase")
         else:
             if db_path:
                 self.db_path = db_path
             else:
                 self.db_path = config.database_url.replace("sqlite:///", "")
-            print(f"📁 DatabaseManager initialized with SQLite: {self.db_path}")
+            print("[DB] DatabaseManager initialized with SQLite")
     
     def initialize_database(self):
         """Initialize local database if using SQLite. Supabase schema is handled via migration tools."""
@@ -129,7 +129,7 @@ class DatabaseManager:
             """)
             
             conn.commit()
-            print("Local database initialized successfully")
+            print("[DB] Config missing, using in-memory fallback")
     
     @contextmanager
     def get_connection(self):
@@ -281,7 +281,85 @@ class DatabaseManager:
             )
             conn.commit()
             return cursor.lastrowid
+            
+    def get_user_history(self, user_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Retrieve recent wellness plans and feedback for a user."""
+        if self.use_supabase:
+            try:
+                response = self.supabase.table("wellness_plans")\
+                    .select("plan_data, confidence, timestamp")\
+                    .eq("user_id", user_id)\
+                    .order("created_at", desc=True)\
+                    .limit(limit)\
+                    .execute()
+                return response.data
+            except Exception as e:
+                logger.error(f"Error fetching user history from Supabase: {e}")
+                return []
+                
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """SELECT plan_data, confidence, timestamp FROM wellness_plans 
+                   WHERE user_id = ? ORDER BY created_at DESC LIMIT ?""",
+                (user_id, limit)
+            )
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_agent_memory(self, agent_name: str, memory_type: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Retrieve historical agent memory/insights."""
+        if self.use_supabase:
+            try:
+                response = self.supabase.table("agent_memory")\
+                    .select("data, timestamp, session_id")\
+                    .eq("agent_name", agent_name)\
+                    .eq("memory_type", memory_type)\
+                    .order("created_at", desc=True)\
+                    .limit(limit)\
+                    .execute()
+                return response.data
+            except Exception as e:
+                logger.error(f"Error fetching agent memory from Supabase: {e}")
+                return []
+                
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """SELECT data, timestamp, session_id FROM agent_memory 
+                   WHERE agent_name = ? AND memory_type = ? 
+                   ORDER BY created_at DESC LIMIT ?""",
+                (agent_name, memory_type, limit)
+            )
+            return [dict(row) for row in cursor.fetchall()]
     
+    def log_system_event(self, level: str, message: str, component: Optional[str] = None, 
+                         data: Optional[Dict[str, Any]] = None) -> Any:
+        """Log a system event to the database."""
+        timestamp = datetime.now().isoformat()
+        if self.use_supabase:
+            try:
+                response = self.supabase.table("system_logs").insert({
+                    "level": level,
+                    "message": message,
+                    "component": component,
+                    "data": data,
+                    "timestamp": timestamp
+                }).execute()
+                return response.data[0]['id'] if response.data else None
+            except Exception as e:
+                logger.error(f"Error logging system event to Supabase: {e}")
+                return None
+                
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """INSERT INTO system_logs (level, message, component, data, timestamp) 
+                   VALUES (?, ?, ?, ?, ?)""",
+                (level, message, component, json.dumps(data) if data else None, timestamp)
+            )
+            conn.commit()
+            return cursor.lastrowid
+            
     def health_check(self) -> bool:
         """Check database health."""
         if self.use_supabase:

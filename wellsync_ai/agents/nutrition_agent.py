@@ -161,6 +161,8 @@ BUDGET ANALYSIS:
 FOOD AVAILABILITY:
 {self._get_seasonal_availability_info()}
 
+{self._format_historical_context(shared_state.get('historical_context', []) if shared_state else [])}
+
 TASK: Design a nutritionally adequate meal plan that:
 1. Meets all nutritional requirements within budget constraints
 2. Respects dietary preferences and restrictions

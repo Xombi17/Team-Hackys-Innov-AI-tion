@@ -179,6 +179,8 @@ STRESS PATTERN ANALYSIS:
 CURRENT PLAN COMPLEXITY:
 {json.dumps(current_plan_complexity, indent=2)}
 
+{self._format_historical_context(shared_state.get('historical_context', []) if shared_state else [])}
+
 OTHER AGENT PROPOSALS:
 - Fitness Agent: {json.dumps(agent_proposals.get('FitnessAgent', {}), indent=2)}
 - Nutrition Agent: {json.dumps(agent_proposals.get('NutritionAgent', {}), indent=2)}

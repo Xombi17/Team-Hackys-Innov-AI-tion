@@ -177,6 +177,8 @@ STRESS INDICATORS:
 CIRCADIAN MARKERS:
 {json.dumps(self.circadian_markers, indent=2)}
 
+{self._format_historical_context(shared_state.get('historical_context', []) if shared_state else [])}
+
 TASK: Optimize sleep and recovery by:
 1. Calculating accurate sleep debt and recovery needs
 2. Recommending optimal sleep schedule within constraints

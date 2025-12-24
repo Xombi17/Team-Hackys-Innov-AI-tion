@@ -232,6 +232,8 @@ OPTIMIZATION CONTEXT:
 - Soft constraints count: {len([c for c in constraint_analysis.get('constraints', []) if c.get('type') == 'soft'])}
 - Recovery priority active: {self._is_recovery_priority_active(agent_proposals)}
 
+{self._format_historical_context(shared_state.get('historical_context', []) if shared_state else [])}
+
 COORDINATION TASK:
 Generate a unified wellness plan that resolves all detected conflicts while:
 1. Respecting the constraint hierarchy (safety > hard > soft > preferences)

@@ -12,6 +12,7 @@ from wellsync_ai.agents.nutrition_agent import NutritionAgent
 from wellsync_ai.agents.sleep_agent import SleepAgent
 from wellsync_ai.agents.mental_wellness_agent import MentalWellnessAgent
 from wellsync_ai.agents.coordinator_agent import CoordinatorAgent
+from wellsync_ai.data.database import get_database_manager
 
 logger = structlog.get_logger()
 
@@ -56,8 +57,19 @@ class WellnessWorkflowOrchestrator:
         state_data = shared_state.get_state_data()
         user_profile = state_data.get('user_profile', {})
         constraints = state_data.get('constraints', {})
+        user_id = user_profile.get('user_id')
         
-        # 2. Phase 1: Sequential Agent Analysis
+        # 2. Fetch Historical Context (RAG)
+        historical_context = []
+        if user_id:
+            db_manager = get_database_manager()
+            historical_context = db_manager.get_user_history(user_id, limit=3)
+            logger.info("Fetched historical context for RAG", user_id=user_id, planes_count=len(historical_context))
+        
+        # Inject history into state data for agents to see
+        state_data['historical_context'] = historical_context
+        
+        # 3. Phase 1: Sequential Agent Analysis
         # We run domain agents sequentially to avoid rate limits
         agent_proposals = await self._run_agents(user_profile, constraints, state_data)
         

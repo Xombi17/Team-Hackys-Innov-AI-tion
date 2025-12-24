@@ -271,6 +271,34 @@ class WellnessAgent(Agent, ABC):
                 'timestamp': datetime.now().isoformat(),
                 'reasoning': f"Agent {self.agent_name} encountered an error: {error_info['message']}"
             }
+            
+    def _format_historical_context(self, history: List[Dict[str, Any]]) -> str:
+        """Format historical wellness plans for the prompt."""
+        if not history:
+            return "No previous wellness plans found for this user."
+            
+        formatted = "### USER HISTORY (Recent Plans & Feedback):\n"
+        for i, entry in enumerate(history, 1):
+            timestamp = entry.get('timestamp', 'Unknown date')
+            plan = entry.get('plan_data', {})
+            confidence = entry.get('confidence', 'N/A')
+            
+            # Try to extract a summary or the whole plan
+            summary = ""
+            if isinstance(plan, dict):
+                # If it's a domain-specific proposal within a unified plan
+                if self.domain in plan:
+                    summary = json.dumps(plan[self.domain], indent=2)
+                else:
+                    summary = json.dumps(plan, indent=2)[:500] + "..."
+            else:
+                summary = str(plan)[:500] + "..."
+                
+            formatted += f"\n--- Plan {i} ({timestamp}) ---\n"
+            formatted += f"Confidence: {confidence}\n"
+            formatted += f"Details: {summary}\n"
+            
+        return formatted
     
     @abstractmethod
     def build_wellness_prompt(
