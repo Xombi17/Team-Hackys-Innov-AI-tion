@@ -1,3 +1,12 @@
+---
+title: WellSync AI
+emoji: 🧘
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # WellSync AI - Autonomous Multi-Agent Wellness Orchestrator 🧠💪🥗
 
 > **Hackathon Submission**: A fully autonomous wellness system powered by **Swarms AI** and **Google Gemini/OpenAI**.

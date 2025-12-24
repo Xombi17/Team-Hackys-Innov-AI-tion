@@ -1,35 +1,37 @@
-# Use python 3.10 slim image for smaller size
-FROM python:3.10-slim
 
-# Set working directory
-WORKDIR /app
+# Use an official Python runtime as a parent image
+FROM python:3.10-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    FLASK_APP=run_api.py
+    PORT=7860 \
+    FLASK_ENV=production
 
-# Install system dependencies
+# Set work directory
+WORKDIR /app
+
+# Install system dependencies (e.g., for Graphviz if needed by swarms/agents)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+    gcc \
+    graphviz \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file
+# Install Python dependencies
 COPY requirements.txt .
-
-# Install python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy the application code
 COPY . .
 
-# Create a user to run the application (security best practice)
-RUN useradd -m appuser && chown -R appuser /app
-USER appuser
+# Create a non-root user and switch to it (Hugging Face Best Practice)
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
 
-# Expose the port the app runs on (7860 is default for Hugging Face Spaces)
+# Expose the port (Hugging Face Spaces expects 7860)
 EXPOSE 7860
 
-# Command to run the application
-# We map 7860 to the PORT env var for the app
-CMD ["python", "run_api.py"]
+# Run the application using Gunicorn for production
+CMD ["gunicorn", "--bind", "0.0.0.0:7860", "--workers", "2", "--threads", "4", "run_api:app"]
