@@ -63,8 +63,8 @@ graph TD
 
 ```bash
 # Clone the repository
-git clone <repository_url>
-cd wellsync-ai
+git clone https://github.com/Xombi17/innov-ai-hackathon-swarms.git
+cd innov-ai-hackathon-swarms
 
 # Create virtual environment
 python -m venv venv
@@ -84,7 +84,7 @@ Create a `.env` file in the root directory:
 ```bash
 # .env
 LLM_PROVIDER=gemini
-LLM_MODEL=gemini/gemini-1.5-flash
+LLM_MODEL=gemini/gemini-3-flash-preview
 GEMINI_API_KEY=your_gemini_key_here
 
 # Optional: SQLite DB (Auto-created)
@@ -100,7 +100,7 @@ python init_db.py
 
 ---
 
-## 🏃‍♂️ usage
+## 🏃‍♂️ Usage
 
 ### 1. Start the Backend API
 The core intelligence lives in the Flask API.
