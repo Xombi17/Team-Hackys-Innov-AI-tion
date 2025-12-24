@@ -37,6 +37,10 @@ class WellSyncConfig(BaseSettings):
     database_url: str = Field("sqlite:///data/databases/wellsync.db", env="DATABASE_URL")
     redis_url: str = Field("redis://localhost:6379/0", env="REDIS_URL")
     
+    # Supabase Configuration
+    supabase_url: Optional[str] = Field(None, env="SUPABASE_URL")
+    supabase_key: Optional[str] = Field(None, env="SUPABASE_KEY")
+    
     # Flask Configuration
     flask_env: str = Field("development", env="FLASK_ENV")
     flask_debug: bool = Field(True, env="FLASK_DEBUG")

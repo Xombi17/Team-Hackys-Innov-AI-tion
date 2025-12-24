@@ -1,32 +1,43 @@
-"""
-Database setup and management for WellSync AI system.
-
-Handles SQLite database initialization, schema creation,
-and connection management for persistent storage.
-"""
-
 import sqlite3
 import json
+import logging
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 from contextlib import contextmanager
+
+try:
+    from supabase import create_client, Client
+    SUPABASE_AVAILABLE = True
+except ImportError:
+    SUPABASE_AVAILABLE = False
+
 from wellsync_ai.utils.config import get_config
 
 config = get_config()
+logger = logging.getLogger(__name__)
 
 
 class DatabaseManager:
-    """Manages SQLite database operations for WellSync AI."""
+    """Manages Supabase (Cloud) or SQLite (Local) operations for WellSync AI."""
     
     def __init__(self, db_path: Optional[str] = None):
-        if db_path:
-            self.db_path = db_path
+        self.use_supabase = SUPABASE_AVAILABLE and config.supabase_url and config.supabase_key
+        
+        if self.use_supabase:
+            self.supabase: Client = create_client(config.supabase_url, config.supabase_key)
+            print("🚀 DatabaseManager initialized with Supabase")
         else:
-            # Extract path from database URL
-            self.db_path = config.database_url.replace("sqlite:///", "")
+            if db_path:
+                self.db_path = db_path
+            else:
+                self.db_path = config.database_url.replace("sqlite:///", "")
+            print(f"📁 DatabaseManager initialized with SQLite: {self.db_path}")
     
     def initialize_database(self):
-        """Initialize the database with required tables."""
+        """Initialize local database if using SQLite. Supabase schema is handled via migration tools."""
+        if self.use_supabase:
+            return
+            
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
@@ -117,30 +128,31 @@ class DatabaseManager:
                 )
             """)
             
-            # Create indexes for better performance
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_agent_memory_name ON agent_memory(agent_name)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_agent_memory_type ON agent_memory(memory_type)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_wellness_plans_user ON wellness_plans(user_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_system_logs_level ON system_logs(level)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_requests_endpoint ON api_requests(endpoint)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_requests_user ON api_requests(user_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_feedback_state ON user_feedback(state_id)")
-            
             conn.commit()
-            print("Database initialized successfully")
+            print("Local database initialized successfully")
     
     @contextmanager
     def get_connection(self):
-        """Get a database connection with automatic cleanup."""
+        """Get a database connection (SQLite only)."""
+        if self.use_supabase:
+            raise RuntimeError("DatabaseManager is using Supabase; get_connection is for SQLite only.")
+        
         conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row  # Enable dict-like access
+        conn.row_factory = sqlite3.Row
         try:
             yield conn
         finally:
             conn.close()
     
-    def store_shared_state(self, state_data: Dict[str, Any]) -> int:
+    def store_shared_state(self, state_data: Dict[str, Any]) -> Any:
         """Store shared state data."""
+        if self.use_supabase:
+            response = self.supabase.table("shared_states").insert({
+                "data": state_data,
+                "timestamp": datetime.now().isoformat()
+            }).execute()
+            return response.data[0]['id'] if response.data else None
+            
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -152,6 +164,10 @@ class DatabaseManager:
     
     def get_latest_shared_state(self) -> Optional[Dict[str, Any]]:
         """Get the most recent shared state."""
+        if self.use_supabase:
+            response = self.supabase.table("shared_states").select("data").order("created_at", desc=True).limit(1).execute()
+            return response.data[0]['data'] if response.data else None
+            
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -161,8 +177,18 @@ class DatabaseManager:
             return json.loads(row['data']) if row else None
     
     def store_agent_memory(self, agent_name: str, memory_type: str, 
-                          data: Dict[str, Any], session_id: Optional[str] = None) -> int:
+                          data: Dict[str, Any], session_id: Optional[str] = None) -> Any:
         """Store agent memory data."""
+        if self.use_supabase:
+            response = self.supabase.table("agent_memory").insert({
+                "agent_name": agent_name,
+                "memory_type": memory_type,
+                "session_id": session_id,
+                "data": data,
+                "timestamp": datetime.now().isoformat()
+            }).execute()
+            return response.data[0]['id'] if response.data else None
+            
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -175,23 +201,18 @@ class DatabaseManager:
             conn.commit()
             return cursor.lastrowid
     
-    def get_agent_memory(self, agent_name: str, memory_type: str, 
-                        limit: int = 100) -> List[Dict[str, Any]]:
-        """Get agent memory data."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                """SELECT data, timestamp FROM agent_memory 
-                   WHERE agent_name = ? AND memory_type = ? 
-                   ORDER BY created_at DESC LIMIT ?""",
-                (agent_name, memory_type, limit)
-            )
-            rows = cursor.fetchall()
-            return [json.loads(row['data']) for row in rows]
-    
     def store_wellness_plan(self, user_id: str, plan_data: Dict[str, Any], 
-                           confidence: float) -> int:
+                           confidence: float) -> Any:
         """Store a wellness plan."""
+        if self.use_supabase:
+            response = self.supabase.table("wellness_plans").insert({
+                "user_id": user_id,
+                "plan_data": plan_data,
+                "confidence": confidence,
+                "timestamp": datetime.now().isoformat()
+            }).execute()
+            return response.data[0]['id'] if response.data else None
+            
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -203,28 +224,26 @@ class DatabaseManager:
             conn.commit()
             return cursor.lastrowid
     
-    def log_system_event(self, level: str, message: str, 
-                        component: Optional[str] = None, 
-                        data: Optional[Dict[str, Any]] = None):
-        """Log a system event."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                """INSERT INTO system_logs 
-                   (level, message, component, data, timestamp) 
-                   VALUES (?, ?, ?, ?, ?)""",
-                (level, message, component, 
-                 json.dumps(data) if data else None, 
-                 datetime.now().isoformat())
-            )
-            conn.commit()
-    
     def log_api_request(self, endpoint: str, method: str, request_data: Dict[str, Any],
                        request_id: str, user_id: Optional[str] = None,
                        response_status: Optional[int] = None,
                        response_data: Optional[Dict[str, Any]] = None,
-                       duration_ms: Optional[float] = None) -> int:
+                       duration_ms: Optional[float] = None) -> Any:
         """Log an API request."""
+        if self.use_supabase:
+            response = self.supabase.table("api_requests").insert({
+                "request_id": request_id,
+                "endpoint": endpoint,
+                "method": method,
+                "user_id": user_id,
+                "request_data": request_data,
+                "response_status": response_status,
+                "response_data": response_data,
+                "duration_ms": duration_ms,
+                "timestamp": datetime.now().isoformat()
+            }).execute()
+            return response.data[0]['id'] if response.data else None
+            
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -241,8 +260,17 @@ class DatabaseManager:
             return cursor.lastrowid
     
     def store_user_feedback(self, state_id: str, feedback: Dict[str, Any],
-                           request_id: Optional[str] = None) -> int:
+                           request_id: Optional[str] = None) -> Any:
         """Store user feedback."""
+        if self.use_supabase:
+            response = self.supabase.table("user_feedback").insert({
+                "state_id": state_id,
+                "request_id": request_id,
+                "feedback_data": feedback,
+                "timestamp": datetime.now().isoformat()
+            }).execute()
+            return response.data[0]['id'] if response.data else None
+            
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -254,20 +282,17 @@ class DatabaseManager:
             conn.commit()
             return cursor.lastrowid
     
-    def get_user_feedback(self, state_id: str, limit: int = 50) -> List[Dict[str, Any]]:
-        """Get user feedback for a state."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                """SELECT feedback_data, timestamp FROM user_feedback 
-                   WHERE state_id = ? ORDER BY created_at DESC LIMIT ?""",
-                (state_id, limit)
-            )
-            rows = cursor.fetchall()
-            return [json.loads(row['feedback_data']) for row in rows]
-    
     def health_check(self) -> bool:
         """Check database health."""
+        if self.use_supabase:
+            try:
+                # Querying a system table or any existing table to check connectivity
+                self.supabase.table("wellness_plans").select("id").limit(1).execute()
+                return True
+            except Exception as e:
+                logger.error(f"Supabase health check failed: {e}")
+                return False
+        
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()

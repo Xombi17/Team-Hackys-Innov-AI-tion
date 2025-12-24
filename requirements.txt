@@ -1,6 +1,7 @@
 # Core Dependencies
 swarms>=5.0.0
 flask>=2.3.0
+supabase>=2.3.0
 redis>=4.5.0
 sqlalchemy>=2.0.0
 

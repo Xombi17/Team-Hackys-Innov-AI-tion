@@ -87,7 +87,11 @@ LLM_PROVIDER=gemini
 LLM_MODEL=gemini/gemini-3-flash-preview
 GEMINI_API_KEY=your_gemini_key_here
 
-# Optional: SQLite DB (Auto-created)
+# Supabase Cloud Backend (Optional - Replaces Local SQLite)
+SUPABASE_URL=https://xvhndmsndogkvpwuemzl.supabase.co
+SUPABASE_KEY=your_supabase_anon_or_service_key
+
+# Optional: SQLite DB (Fallback if Supabase is not configured)
 DATABASE_URL=sqlite:///data/databases/wellsync.db
 ```
 
