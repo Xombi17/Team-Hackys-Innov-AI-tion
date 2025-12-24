@@ -33,5 +33,5 @@ ENV HOME=/home/user \
 # Expose the port (Hugging Face Spaces expects 7860)
 EXPOSE 7860
 
-# Run the application using Gunicorn for production
-CMD ["gunicorn", "--bind", "0.0.0.0:7860", "--workers", "2", "--threads", "4", "run_api:app"]
+# Initialize database and run the application
+CMD python init_db.py && gunicorn --bind 0.0.0.0:7860 --workers 2 --threads 4 run_api:app

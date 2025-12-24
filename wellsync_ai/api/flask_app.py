@@ -281,6 +281,22 @@ def create_flask_app() -> Flask:
         return decorated_function
     
     # API Routes
+    @app.route('/', methods=['GET'])
+    def index():
+        """Root endpoint returning basic API info."""
+        return jsonify({
+            'success': True,
+            'service': 'WellSync AI API',
+            'version': '1.0.0',
+            'status': 'active',
+            'message': 'Welcome to the WellSync AI Multi-Agent Wellness API',
+            'endpoints': {
+                'health': '/health',
+                'wellness_plan': '/wellness-plan (POST)',
+                'agents_status': '/agents/status'
+            }
+        }), 200
+
     @app.route('/health', methods=['GET'])
     def health_check():
         """Health check endpoint."""
