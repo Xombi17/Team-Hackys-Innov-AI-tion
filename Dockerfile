@@ -8,10 +8,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PORT=7860 \
     FLASK_ENV=production
 
-# Set work directory
-WORKDIR /app
+# Create a non-root user
+RUN useradd -m -u 1000 user
 
-# Install system dependencies (e.g., for Graphviz if needed by swarms/agents)
+# Set work directory
+WORKDIR /home/user/app
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     graphviz \
@@ -21,11 +24,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
-COPY . .
+# Copy the application code and set ownership
+COPY --chown=user . .
 
-# Create a non-root user and switch to it (Hugging Face Best Practice)
-RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH
