@@ -1314,7 +1314,7 @@ give general wellness advice."""
         if any(word in q for word in ['sleep', 'tired', 'insomnia', 'rest']):
             return "Sleep is crucial for recovery! 😴 Here are my top tips:\n\n1. **Consistent schedule** - same bedtime/wake time daily\n2. **Screen-free hour** before bed\n3. **Cool, dark room** (65-68°F ideal)\n4. **Limit caffeine** after 2 PM\n\nHow many hours are you currently sleeping?"
         
-        if any(word in q for word in ['food', 'eat', 'meal', 'diet', 'nutrition', 'protein']):
+        if any(word in q for word in ['food', 'eat', 'meal', 'diet', 'nutrition', 'protein', 'water', 'drink', 'hydration']):
             return "Nutrition is the foundation of wellness! 🥗 Key principles:\n\n1. **Protein with every meal** (palm-sized portion)\n2. **Colorful vegetables** - aim for variety\n3. **Stay hydrated** - 8+ glasses of water\n4. **Minimize processed foods**\n\nWould you like meal suggestions or macro guidance?"
         
         if any(word in q for word in ['stress', 'anxious', 'anxiety', 'mental', 'meditation', 'mindful']):
