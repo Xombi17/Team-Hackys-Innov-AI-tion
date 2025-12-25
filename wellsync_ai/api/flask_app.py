@@ -1325,6 +1325,66 @@ give general wellness advice."""
 
         return "Great question! ✨ As your wellness coach, I focus on four pillars:\n\n* **Fitness**: effective workouts for your goals\n* **Nutrition**: balanced eating for energy\n* **Sleep**: quality rest for recovery\n* **Mental**: stress management & mindfulness\n\nWhich area would you like to explore today?"
     
+    @app.route('/plan/progress', methods=['GET', 'POST'])
+    def sync_progress():
+        """
+        Sync/Get Plan Progress
+        ---
+        tags:
+          - Plan
+        summary: Update or Get completed tasks for the latest active plan
+        """
+        try:
+            if request.method == 'GET':
+                user_id = request.args.get('user_id')
+                if not user_id:
+                     return jsonify({'success': False, 'message': 'User ID required'}), 400
+
+                # Find latest plan
+                response = supabase.table('wellness_plans')\
+                    .select('completed_tasks')\
+                    .eq('user_id', user_id)\
+                    .order('created_at', desc=True)\
+                    .limit(1)\
+                    .execute()
+                
+                if not response.data:
+                    return jsonify({'success': True, 'completed_tasks': []}), 200
+                
+                tasks = response.data[0].get('completed_tasks') or []
+                return jsonify({'success': True, 'completed_tasks': tasks}), 200
+
+            # POST
+            data = request.get_json()
+            user_id = data.get('user_id')
+            completed_tasks = data.get('completed_tasks', [])
+            
+            logger.info("Syncing progress", user_id=user_id)
+
+            # Find latest plan
+            response = supabase.table('wellness_plans')\
+                .select('id')\
+                .eq('user_id', user_id)\
+                .order('created_at', desc=True)\
+                .limit(1)\
+                .execute()
+
+            if not response.data:
+                 return jsonify({'success': False, 'message': 'No plan found'}), 404
+            
+            plan_id = response.data[0]['id']
+            
+            # Update
+            supabase.table('wellness_plans')\
+                .update({'completed_tasks': completed_tasks})\
+                .eq('id', plan_id)\
+                .execute()
+                
+            return jsonify({'success': True, 'timestamp': datetime.now().isoformat()}), 200
+        except Exception as e:
+            logger.error("Sync failed", error=str(e))
+            return jsonify({'success': False, 'error': str(e)}), 500
+
     return app
 
 
