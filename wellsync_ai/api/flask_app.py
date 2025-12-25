@@ -1259,8 +1259,8 @@ give general wellness advice."""
                 import litellm
                 import os
                 
-                # Use Gemini Flash for fast responses
-                model = os.getenv('GEMINI_MODEL', 'gemini/gemini-2.0-flash')
+                # Use Gemini 3 Flash Preview for fast responses
+                model = os.getenv('LLM_MODEL', 'gemini/gemini-3-flash-preview')
                 
                 response = litellm.completion(
                     model=model,
