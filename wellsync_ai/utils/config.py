@@ -48,7 +48,14 @@ class WellSyncConfig(BaseSettings):
     flask_host: str = Field("127.0.0.1", env="FLASK_HOST")
     flask_port: int = Field(5000, env="FLASK_PORT")
     debug_mode: bool = Field(True, env="DEBUG_MODE")
-    allowed_origins: list = Field(["http://localhost:3000", "http://127.0.0.1:3000"], env="ALLOWED_ORIGINS")
+    # CORS: Accepts comma-separated origins or "*" for all
+    allowed_origins: str = Field("http://localhost:3000,http://127.0.0.1:3000", env="ALLOWED_ORIGINS")
+    
+    def get_allowed_origins(self) -> list:
+        """Parse ALLOWED_ORIGINS into a list. Supports '*' for all origins."""
+        if self.allowed_origins == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
     
     # Agent Configuration
     agent_temperature: float = Field(0.1, env="AGENT_TEMPERATURE")

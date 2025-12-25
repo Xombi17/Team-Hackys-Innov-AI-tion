@@ -85,6 +85,15 @@ class WellnessWorkflowOrchestrator:
         )
         
         # 4. Phase 3: Finalization & Response
+        # Persist the unified plan to shared state's current_plans
+        # This ensures the plan is stored and retrievable
+        for domain in ['fitness', 'nutrition', 'sleep', 'mental_wellness']:
+            if domain in unified_plan:
+                shared_state.update_current_plans(domain, unified_plan[domain])
+        
+        # Also store the full unified plan for easy retrieval
+        shared_state.update_recent_data('unified_plan', unified_plan)
+        
         # Format the final response
         final_response = {
             'success': True,
@@ -96,9 +105,6 @@ class WellnessWorkflowOrchestrator:
                 'coordination_confidence': unified_plan.get('confidence', 0.0)
             }
         }
-        
-        # Update shared state with final result
-        shared_state.update_recent_data('unified_plan', unified_plan)
         
         logger.info("Wellness workflow execution completed", state_id=state_id)
         

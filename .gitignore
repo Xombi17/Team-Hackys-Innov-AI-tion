@@ -33,6 +33,11 @@ MANIFEST
 *.manifest
 *.spec
 
+# Environment files (contain secrets)
+.env
+.env.local
+web/.env.local
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt

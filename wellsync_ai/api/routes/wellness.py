@@ -118,16 +118,15 @@ def generate_wellness_plan(request_data: Dict[str, Any]):
                 status_code=500,
                 error_code="WORKFLOW_FAILED"
             )
-            
-        # Get final state
-        final_state = get_shared_state(shared_state.state_id)
-        current_plans = final_state.get_state_data().get('current_plans', {})
+        
+        # Extract the unified plan from the workflow result
+        unified_plan = result.get('plan', {})
         
         # Store plan in database
         db_manager.store_wellness_plan(
             user_id=user_profile.get('user_id'),
-            plan_data=current_plans,
-            confidence=0.85 # Approximation
+            plan_data=unified_plan,
+            confidence=unified_plan.get('confidence', 0.85)
         )
         
         response_data = {
@@ -135,11 +134,8 @@ def generate_wellness_plan(request_data: Dict[str, Any]):
             'timestamp': datetime.now().isoformat(),
             'request_id': g.request_id,
             'state_id': shared_state.state_id,
-            'plan': current_plans,
-            'metadata': {
-                'generated_at': datetime.now().isoformat(),
-                'version': '1.0.0'
-            }
+            'plan': unified_plan,
+            'metadata': result.get('metadata', {})
         }
         
         logger.info(

@@ -70,7 +70,8 @@ def create_flask_app() -> Flask:
     app.config['JSON_SORT_KEYS'] = False
     
     # Enable CORS for cross-origin requests
-    CORS(app, origins=config.allowed_origins)
+    allowed = config.get_allowed_origins()
+    CORS(app, origins=allowed if allowed != ["*"] else "*", supports_credentials=True)
     
     # Configure Swagger/OpenAPI documentation
     swagger_config = {
