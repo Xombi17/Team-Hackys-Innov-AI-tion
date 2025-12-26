@@ -77,7 +77,11 @@ A high-performance Flutter application.
 ```bash
 cd wellsync_flutterapp
 
-# 1. Get Dependencies
+# 1. Configure Environment
+# Copy .env.example to .env and add Supabase keys
+# cp .env.example .env
+
+# 2. Get Dependencies
 flutter pub get
 
 # 2. Run App

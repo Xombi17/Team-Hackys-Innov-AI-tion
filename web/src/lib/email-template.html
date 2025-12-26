@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Your WellSync Account</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #020617; /* Slate 950 */
+      margin: 0;
+      padding: 0;
+      color: #f8fafc;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .card {
+      background-color: #0f172a; /* Slate 900 */
+      border: 1px solid #1e293b; /* Slate 800 */
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .logo {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+      line-height: 48px;
+    }
+    h1 {
+      color: #f8fafc;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      margin-top: 0;
+    }
+    p {
+      color: #94a3b8; /* Slate 400 */
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .button {
+      display: inline-block;
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: #ffffff;
+      text-decoration: none;
+      padding: 14px 32px;
+      border-radius: 99px;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 0 20px -5px rgba(99, 102, 241, 0.5);
+      transition: transform 0.2s;
+    }
+    .footer {
+      margin-top: 32px;
+      text-align: center;
+      color: #475569; /* Slate 600 */
+      font-size: 12px;
+    }
+    .link {
+      color: #6366f1;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="logo">W</div>
+      <h1>Welcome to WellSync AI</h1>
+      <p>
+        You're one step away from activating your personalized wellness ecosystem. 
+        Please confirm your email address to sync with the hive mind.
+      </p>
+      <!-- Supabase replaces {{  .ConfirmationURL  }} with the real link -->
+      <a href="{{ .ConfirmationURL }}" class="button">Confirm Email Address</a>
+      
+      <p style="margin-top: 32px; font-size: 14px; margin-bottom: 0;">
+        Or paste this link in your browser:<br>
+        <a href="{{ .ConfirmationURL }}" class="link">{{ .ConfirmationURL }}</a>
+      </p>
+    </div>
+    
+    <div class="footer">
+      <p>&copy; 2024 WellSync AI. Intelligent Wellness Architecture.</p>
+    </div>
+  </div>
+</body>
+</html>

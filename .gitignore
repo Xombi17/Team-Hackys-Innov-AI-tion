@@ -16,7 +16,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/
 lib64/
 parts/
 sdist/
@@ -136,7 +136,7 @@ logs/*.log
 *.log
 
 # IDE files
-.vscode/
+# .vscode/
 .idea/
 *.swp
 *.swo
